@@ -206,7 +206,14 @@ def model():
 # Create a column for each elements
 container = st.container()
 with st.container():
-    df = pd.read_excel(r'C:\Users\ashee\OneDrive\Desktop\VS\03.06.2023\grade.xlsx')
+   uploaded_file = st.file_uploader("Upload Grade Excel File", type=["xlsx"])
+
+if uploaded_file is None:
+    st.info("Please upload grade file to continue")
+    st.stop()
+
+df = pd.read_excel(uploaded_file)
+
     df['Dolvi grades'] = df['Dolvi grades'].str.upper()
 
     grade = st.selectbox('Select Grade', df['Dolvi grades'].unique())
