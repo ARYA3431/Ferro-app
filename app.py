@@ -217,7 +217,7 @@ df = pd.read_excel(uploaded_file)
 df['Dolvi grades'] = df['Dolvi grades'].str.upper()
 
 grade = st.selectbox('Select Grade', df['Dolvi grades'].unique())
-    filtered_df = df[df['Dolvi grades'].str.upper() == grade.upper()]
+filtered_df = df[df['Dolvi grades'].str.upper() == grade.upper()]
 
 # all the conditions which causes infeasible reasult
     if filtered_df['si_aim'].iloc[0]  == 0:
