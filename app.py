@@ -220,7 +220,7 @@ grade = st.selectbox('Select Grade', df['Dolvi grades'].unique())
 filtered_df = df[df['Dolvi grades'].str.upper() == grade.upper()]
 
 # all the conditions which causes infeasible reasult
-    if filtered_df['si_aim'].iloc[0]  == 0:
+if filtered_df['si_aim'].iloc[0]  == 0:
         #fix simn zero
         filtered_df['si_aim'].iloc[0] = 0.009
         
