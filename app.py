@@ -2,6 +2,19 @@
 import pandas as pd
 import streamlit as st
 from pulp import LpStatus, LpStatusInfeasible
+import datetime
+import os
+
+def save_log(data_dict):
+
+    file = "run_log.csv"
+
+    df = pd.DataFrame([data_dict])
+
+    if not os.path.isfile(file):
+        df.to_csv(file, index=False)
+    else:
+        df.to_csv(file, mode="a", header=False, index=False)
 
 st.title('Ferroalloy Model with Optimal Cost')# :copyright:')
 #st.title(':blue[Ferroalloy Model with Optimal Cost]:copyright:')
