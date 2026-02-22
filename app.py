@@ -214,7 +214,7 @@ def model():
 container = st.container()
 
 with st.container():
-    df = pd.read_excel(r'C:\Users\ashee\OneDrive\Desktop\VS\03.06.2023\grade.xlsx')
+    pd.read_excel("details.xlsx")
     df['Dolvi grades'] = df['Dolvi grades'].str.upper()
 
     grade = st.selectbox('Select Grade', df['Dolvi grades'].unique())
