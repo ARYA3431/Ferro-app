@@ -7,8 +7,14 @@ from pulp import LpStatus, LpStatusInfeasible
 st.title('Ferroalloy Model with Optimal Cost')
 
 # LOAD MAIN DATAFRAME (was missing)
-df = pd.read_excel("details.xlsx")
+df = pd.read_excel("details.xlsx", sheet_name="grades")
 df.columns = df.columns.str.strip()
+
+if "Dolvi grades" not in df.columns:
+    st.error("Grade column not found. Check Excel sheet.")
+    st.stop()
+
+df["Dolvi grades"] = df["Dolvi grades"].astype(str).str.upper()
 
 if 'Dolvi grades' not in df.columns:
     st.error(f"Column 'Dolvi grades' not found. Available columns: {list(df.columns)}")
