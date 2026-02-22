@@ -1,202 +1,156 @@
-﻿from pulp import *
+﻿import streamlit as st
 import pandas as pd
-import streamlit as st
+import os
+import datetime
+from pulp import *
 
-st.title("Ferroalloy Model with Optimal Cost")
+st.set_page_config(page_title="Ferro Alloy Optimizer", layout="wide")
 
-# =========================
-# LOAD FILES
-# =========================
-cost_df = pd.read_excel("details.xlsx", sheet_name="cost", index_col=0)
-FA_df = pd.read_excel("details.xlsx", sheet_name="FA_details")
-FA_df.set_index("Ferroalloy", inplace=True)
+st.title("Ferro Alloy Optimization Model")
 
 # =========================
-# LOAD GRADE FILE
+# LOAD EXCEL FILE
 # =========================
-df = pd.read_excel("grade.xlsx")
-df["Dolvi grades"] = df["Dolvi grades"].str.upper()
 
-grade = st.selectbox("Select Grade", df["Dolvi grades"].unique())
-filtered_df = df[df["Dolvi grades"] == grade]
+file_path = "grade.xlsx"
 
-# Fix infeasible Si aim
-if filtered_df["si_aim"].iloc[0] == 0:
-    filtered_df.loc[filtered_df.index[0], "si_aim"] = 0.009
+uploaded = st.file_uploader("Upload Grade File (Optional)", type=["xlsx"])
 
-# =========================
-# DISPLAY TARGET TABLE
-# =========================
-min_max_df = pd.DataFrame({
-    "Elements": ["Min", "Max", "Aim"],
-    "C": [filtered_df["c_min"].iloc[0], filtered_df["c_max"].iloc[0], filtered_df["c_aim"].iloc[0]],
-    "Mn": [filtered_df["mn_min"].iloc[0], filtered_df["mn_max"].iloc[0], filtered_df["mn_aim"].iloc[0]],
-    "S": [filtered_df["s_min"].iloc[0], filtered_df["s_max"].iloc[0], filtered_df["s_aim"].iloc[0]],
-    "P": [filtered_df["p_min"].iloc[0], filtered_df["p_max"].iloc[0], filtered_df["p_aim"].iloc[0]],
-    "Si": [filtered_df["si_min"].iloc[0], filtered_df["si_max"].iloc[0], filtered_df["si_aim"].iloc[0]]
-})
+if uploaded is not None:
+    df = pd.read_excel(uploaded)
+elif os.path.exists(file_path):
+    df = pd.read_excel(file_path)
+else:
+    st.error("No Excel file found")
+    st.stop()
 
-st.write(min_max_df)
+st.subheader("Raw Data")
+st.dataframe(df)
 
 # =========================
-# INPUT CHEMISTRY
+# USER INPUTS
 # =========================
-st.subheader("Enter Blow End Chemistry")
 
-col1, col2, col3 = st.columns(3)
-Carbon = col1.number_input("C", format="%.3f")
-Manganese = col2.number_input("Mn", format="%.3f")
-Sulphur = col3.number_input("S", format="%.3f")
+st.sidebar.header("Blow End Chemistry")
 
-col4, col5, col6 = st.columns(3)
-Phosphorus = col4.number_input("P", format="%.3f")
-Silicon = col5.number_input("Si", format="%.3f")
-Tap_Weight = col6.number_input("Tap Weight", value=350)
+elements = ["C", "Mn", "Si", "P", "S"]
 
-# =========================
-# SIDEBAR INPUTS
-# =========================
-with st.sidebar:
+blow = {}
+min_lim = {}
+max_lim = {}
 
-    st.subheader("Bunker Availability")
+for e in elements:
+    blow[e] = st.sidebar.number_input(f"Blow End {e}", value=0.0)
+    min_lim[e] = st.sidebar.number_input(f"Min {e}", value=0.0)
+    max_lim[e] = st.sidebar.number_input(f"Max {e}", value=0.0)
 
-    col1, col2 = st.columns(2)
+st.sidebar.header("Bunker Availability")
 
-    col1.write("Recovery")
-
-    SiMn1 = col1.number_input("SiMn", 0.0,1.0,1.0)
-    HCMn1 = col1.number_input("HCMn",0.0,1.0,1.0)
-    MCMn1 = col1.number_input("MCMn",0.0,1.0,1.0)
-    LCMn1 = col1.number_input("LCMn",0.0,1.0,1.0)
-    MtMn1 = col1.number_input("MtMn",0.0,1.0,1.0)
-    FeSi1 = col1.number_input("FeSi",0.0,1.0,1.0)
-    CPC1  = col1.number_input("CPC",0.0,1.0,1.0)
-
-    col2.write("Limit")
-
-    SiMn_limit = col2.number_input("SiMn limit", value=9999)
-    HCMn_limit = col2.number_input("HCMn limit", value=9999)
-    MCMn_limit = col2.number_input("MCMn limit", value=9999)
-    LCMn_limit = col2.number_input("LCMn limit", value=9999)
-    MtMn_limit = col2.number_input("MtMn limit", value=9999)
-    FeSi_limit = col2.number_input("FeSi limit", value=9999)
-    CPC_limit  = col2.number_input("CPC limit", value=9999)
-
-# =========================
-# MODEL FUNCTION
-# =========================
-def model():
-
-    prob = LpProblem("Min Cost", LpMinimize)
-
-    # Variables
-    SiMn = LpVariable("SiMn",0,SiMn_limit)
-    HCMn = LpVariable("HCMn",0,HCMn_limit)
-    MCMn = LpVariable("MCMn",0,MCMn_limit)
-    LCMn = LpVariable("LCMn",0,LCMn_limit)
-    MtMn = LpVariable("MtMn",0,MtMn_limit)
-    FeSi = LpVariable("FeSi",0,FeSi_limit)
-    CPC  = LpVariable("CPC",0,CPC_limit)
-
-    # Objective
-    prob += (
-        cost_df.loc["SiMn","COST"]*SiMn +
-        cost_df.loc["HCMn","COST"]*HCMn +
-        cost_df.loc["MCMn","COST"]*MCMn +
-        cost_df.loc["LCMn","COST"]*LCMn +
-        cost_df.loc["FeSi","COST"]*FeSi +
-        cost_df.loc["MtMn","COST"]*MtMn +
-        cost_df.loc["CPC","COST"]*CPC
+bunker = {}
+for mat in df["Material"]:
+    bunker[mat] = st.sidebar.selectbox(
+        f"{mat}", [1, 0], index=0
     )
 
-    # =================
-    # Constraints
-    # =================
+# =========================
+# SOLVE BUTTON
+# =========================
 
-    # Carbon
-    prob += (
-        FA_df.loc["SiMn","C"]*SiMn1*SiMn +
-        FA_df.loc["HCMn","C"]*HCMn1*HCMn +
-        FA_df.loc["MCMn","C"]*MCMn1*MCMn +
-        FA_df.loc["LCMn","C"]*LCMn1*LCMn +
-        FA_df.loc["FeSi","C"]*FeSi1*FeSi +
-        FA_df.loc["MtMn","C"]*MtMn1*MtMn +
-        FA_df.loc["CPC","C"]*CPC1*CPC
-        ==
-        (filtered_df["c_aim"].iloc[0] - Carbon)*Tap_Weight*10
-    )
+if st.button("Run Optimization"):
 
-    # Silicon
-    prob += (
-        FA_df.loc["SiMn","Si"]*SiMn1*SiMn +
-        FA_df.loc["HCMn","Si"]*HCMn1*HCMn +
-        FA_df.loc["MCMn","Si"]*MCMn1*MCMn +
-        FA_df.loc["LCMn","Si"]*LCMn1*LCMn +
-        FA_df.loc["FeSi","Si"]*FeSi1*FeSi +
-        FA_df.loc["MtMn","Si"]*MtMn1*MtMn +
-        FA_df.loc["CPC","Si"]*CPC1*CPC
-        ==
-        (filtered_df["si_aim"].iloc[0] - Silicon)*Tap_Weight*10
-    )
+    prob = LpProblem("FerroOptimization", LpMinimize)
 
-    # Manganese
-    prob += (
-        FA_df.loc["SiMn","Mn"]*SiMn1*SiMn +
-        FA_df.loc["HCMn","Mn"]*HCMn1*HCMn +
-        FA_df.loc["MCMn","Mn"]*MCMn1*MCMn +
-        FA_df.loc["LCMn","Mn"]*LCMn1*LCMn +
-        FA_df.loc["FeSi","Mn"]*FeSi1*FeSi +
-        FA_df.loc["MtMn","Mn"]*MtMn1*MtMn +
-        FA_df.loc["CPC","Mn"]*CPC1*CPC
-        ==
-        (filtered_df["mn_aim"].iloc[0] - Manganese)*Tap_Weight*10
-    )
+    # VARIABLES
+    qty = {
+        row["Material"]: LpVariable(row["Material"], lowBound=0)
+        for _, row in df.iterrows()
+    }
 
-    # Phosphorus
-    prob += (
-        FA_df.loc["SiMn","P"]*SiMn1*SiMn +
-        FA_df.loc["HCMn","P"]*HCMn1*HCMn +
-        FA_df.loc["MCMn","P"]*MCMn1*MCMn +
-        FA_df.loc["LCMn","P"]*LCMn1*LCMn +
-        FA_df.loc["FeSi","P"]*FeSi1*FeSi +
-        FA_df.loc["MtMn","P"]*MtMn1*MtMn +
-        FA_df.loc["CPC","P"]*CPC1*CPC
-        <=
-        (filtered_df["p_aim"].iloc[0] - Phosphorus)*Tap_Weight*10
-    )
+    # OBJECTIVE
+    prob += lpSum(qty[m] * df.loc[df.Material == m, "Cost"].values[0] for m in qty)
 
-    # Sulphur
-    prob += (
-        FA_df.loc["SiMn","S"]*SiMn1*SiMn +
-        FA_df.loc["HCMn","S"]*HCMn1*HCMn +
-        FA_df.loc["MCMn","S"]*MCMn1*MCMn +
-        FA_df.loc["LCMn","S"]*LCMn1*LCMn +
-        FA_df.loc["FeSi","S"]*FeSi1*FeSi +
-        FA_df.loc["MtMn","S"]*MtMn1*MtMn +
-        FA_df.loc["CPC","S"]*CPC1*CPC
-        <=
-        (filtered_df["s_aim"].iloc[0] - Sulphur)*Tap_Weight*10
-    )
+    # =========================
+    # CONSTRAINTS
+    # =========================
 
-    # Solve
+    for e in elements:
+
+        prob += (
+            lpSum(
+                qty[m] * df.loc[df.Material == m, e].values[0]
+                for m in qty
+            )
+            + blow[e]
+            >= min_lim[e]
+        )
+
+        prob += (
+            lpSum(
+                qty[m] * df.loc[df.Material == m, e].values[0]
+                for m in qty
+            )
+            + blow[e]
+            <= max_lim[e]
+        )
+
+    # =========================
+    # BUNKER AVAILABILITY
+    # =========================
+
+    for m in qty:
+        if bunker[m] == 0:
+            prob += qty[m] == 0
+
+    # =========================
+    # SOLVE
+    # =========================
+
     prob.solve()
 
-    # Results
-    st.subheader("Results")
+    st.subheader("Status")
+    st.write(LpStatus[prob.status])
 
-    st.write("Status:", LpStatus[prob.status])
-    st.write("Minimum Cost =", round(value(prob.objective),0))
+    if prob.status != 1:
+        st.error("No feasible solution")
+        st.stop()
 
-    st.write("SiMn =", value(SiMn))
-    st.write("HCMn =", value(HCMn))
-    st.write("MCMn =", value(MCMn))
-    st.write("LCMn =", value(LCMn))
-    st.write("FeSi =", value(FeSi))
-    st.write("MtMn =", value(MtMn))
-    st.write("CPC =", value(CPC))
+    # =========================
+    # RESULTS
+    # =========================
 
-# =========================
-# RUN BUTTON
-# =========================
-if st.button("Predict"):
-    model()
+    results = []
+
+    for v in prob.variables():
+        if v.varValue > 0:
+            results.append([v.name, round(v.varValue, 2)])
+
+    result_df = pd.DataFrame(results, columns=["Material", "Qty"])
+
+    st.subheader("Required Additions")
+    st.dataframe(result_df)
+
+    cost = round(value(prob.objective), 2)
+
+    st.success(f"Minimum Cost = {cost}")
+
+    # =========================
+    # SAVE LOG
+    # =========================
+
+    def save_log(data):
+        file = "run_log.csv"
+        df_log = pd.DataFrame([data])
+        if not os.path.isfile(file):
+            df_log.to_csv(file, index=False)
+        else:
+            df_log.to_csv(file, mode="a", header=False, index=False)
+
+    log_data = {
+        "Time": datetime.datetime.now(),
+        "Cost": cost,
+        "Status": LpStatus[prob.status]
+    }
+
+    save_log(log_data)
+
+    st.info("Run saved to log file")
