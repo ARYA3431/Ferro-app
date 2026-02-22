@@ -214,9 +214,8 @@ def model():
 container = st.container()
 
 with st.container():
-    pd.read_excel("details.xlsx")
-    df['Dolvi grades'] = df['Dolvi grades'].str.upper()
-
+    df = pd.read_excel('grade.xlsx')
+         df['Dolvi grades'] = df['Dolvi grades'].str.upper()
     grade = st.selectbox('Select Grade', df['Dolvi grades'].unique())
     filtered_df = df[df['Dolvi grades'].str.upper() == grade.upper()]
 
