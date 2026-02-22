@@ -1,6 +1,7 @@
 ﻿from pulp import *
 import pandas as pd
 import streamlit as st
+from pulp import LpProblem, value
 from pulp import LpStatus, LpStatusInfeasible
 import datetime
 import os
@@ -104,6 +105,8 @@ def model():
         FA_df.loc['CPC', 'S']*CPC1*CPC <= (filtered_df['s_aim'].iloc[0] - Sulphur) * Tap_Weight * 10
     
     prob1.solve()
+
+result = value(prob1.objective)
 
 # Print the results
     # if prob1.status == LpStatusInfeasible:
@@ -312,6 +315,7 @@ with st.sidebar:
         MtMn_limit = 0
     if CPC1 == 0:
         CPC_limit = 0
+
 if st.button("Predict"):
 
     model()
