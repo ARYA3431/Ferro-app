@@ -104,10 +104,9 @@ def model():
         FA_df.loc['MtMn', 'S']*MtMn1*MtMn + \
         FA_df.loc['CPC', 'S']*CPC1*CPC <= (filtered_df['s_aim'].iloc[0] - Sulphur) * Tap_Weight * 10
     
+    if st.button("Solve"):
     prob1.solve()
-
-result = value(prob1.objective)
-
+    st.write("Status:", LpStatus[prob1.status])
 # Print the results
     # if prob1.status == LpStatusInfeasible:
     #     infeasible_reasons = []
