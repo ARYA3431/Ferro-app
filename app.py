@@ -1,4 +1,4 @@
-﻿from pulp import *
+﻿ from pulp import *
 import pandas as pd
 import streamlit as st
 from pulp import LpStatus, LpStatusInfeasible
@@ -206,13 +206,7 @@ def model():
 # Create a column for each elements
 container = st.container()
 with st.container():
-   uploaded_file = st.file_uploader("Upload Grade Excel File", type=["xlsx"])
-
-if uploaded_file is None:
-    st.info("Please upload grade file to continue")
-    st.stop()
-
-df = pd.read_excel(uploaded_file)
+df = pd.read_excel("grade.xlsx")
 
 df['Dolvi grades'] = df['Dolvi grades'].str.upper()
 
