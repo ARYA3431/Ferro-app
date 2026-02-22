@@ -206,7 +206,7 @@ def model():
 # Create a column for each elements
 container = st.container()
 with st.container():
-df = pd.read_excel("grade.xlsx")
+	df = pd.read_excel("grade.xlsx")
 
 df['Dolvi grades'] = df['Dolvi grades'].str.upper()
 
