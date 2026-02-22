@@ -119,7 +119,7 @@ result = value(prob1.objective)
     #     for reason in infeasible_reasons:
     #         st.write(reason)
     # else:
-    #     st.write("Status:", LpStatus[prob1.status])
+    # st.write("Status:", LpStatus[prob1.status])
 
     st.write("Status: ", LpStatus[prob1.status] )
     st.write("Minimum cost = ", round(value(prob1.objective),0)) #, 'Thank You ! for saving Money :sparkling_heart:')
