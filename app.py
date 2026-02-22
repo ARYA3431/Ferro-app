@@ -312,7 +312,20 @@ with st.sidebar:
         MtMn_limit = 0
     if CPC1 == 0:
         CPC_limit = 0
-
-
 if st.button("Predict"):
+
     model()
+
+    log_data = {
+        "Time": datetime.datetime.now(),
+        "Grade": grade,
+        "C": Carbon,
+        "Mn": Manganese,
+        "S": Sulphur,
+        "P": Phosphorus,
+        "Si": Silicon,
+        "TapWeight": Tap_Weight,
+        "MinCost": value(prob1.objective)
+    }
+
+    save_log(log_data)
