@@ -120,7 +120,7 @@ def model():
 
 # ---------------- GRADE INPUT ----------------
 
-df = pd.read_excel(r'C:\Users\ashee\OneDrive\Desktop\VS\03.06.2023\grade.xlsx')
+df = pd.read_excel("grade.xlsx")
 df['Dolvi grades'] = df['Dolvi grades'].str.upper()
 
 grade = st.selectbox('Select Grade', df['Dolvi grades'].unique())
