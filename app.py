@@ -1,7 +1,7 @@
 from pulp import *
 import pandas as pd
 import streamlit as st
-from pulp import LpStatus, LpStatusInfeasible
+from pulp import LpStatus
 
 st.title('Ferroalloy Model with Optimal Cost')
 
