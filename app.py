@@ -377,4 +377,4 @@ with st.container():
 
 if st.button("Predict"):
     # Call your function
-    model()d
+    model()
